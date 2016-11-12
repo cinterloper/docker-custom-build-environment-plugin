@@ -158,11 +158,15 @@ public class DockerBuildWrapper extends BuildWrapper {
         BuiltInContainer runInContainer = build.getAction(BuiltInContainer.class);
 
         // mount slave root in Docker container so build process can access project workspace, tools, as well as jars copied by maven plugin.
-        final String root = Computer.currentComputer().getNode().getRootPath().getRemote();
+        String root = System.getenv("SWARM_CI_ROOT");
+        if(root == null || root.isEmpty())
+            root = Computer.currentComputer().getNode().getRootPath().getRemote();
         runInContainer.bindMount(root);
 
         // mount tmpdir so we can access temporary file created to run shell build steps (and few others)
-        String tmp = build.getWorkspace().act(GetTmpdir);
+        String tmp = System.getenv("SWARM_TMP_PATH");
+        if(tmp == null || tmp.isEmpty())
+          tmp = build.getWorkspace().act(GetTmpdir);
         runInContainer.bindMount(tmp);
 
         // mount ToolIntallers installation directory so installed tools are available inside container
