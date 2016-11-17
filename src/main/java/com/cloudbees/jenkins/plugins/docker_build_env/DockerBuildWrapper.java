@@ -167,7 +167,20 @@ public class DockerBuildWrapper extends BuildWrapper {
         String tmp = System.getenv("SWARM_TMP_PATH");
         if(tmp == null || tmp.isEmpty())
           tmp = build.getWorkspace().act(GetTmpdir);
-        runInContainer.bindMount(tmp);
+        runInContainer.bindMount(tmp,"/tmp"); //if the system tempdir is not /tmp, who cares? the container wont.
+        String[] extraBinds = null; // '/srv/this;/srv/that;/opt/whatever:/opt/wherever;/home/monkey:/home/chimp'
+        String envBinds = System.getenv("SWARM_EXTRA_MOUNTS");
+        if(envBinds != null && !envBinds.isEmpty())
+            extraBinds = envBinds.split(";");
+        if(extraBinds != null)
+            for (String bind : extraBinds){
+                String[] parts = bind.split(":");
+                if(parts.length == 2)
+                    runInContainer.bindMount(parts[0],parts[1]);
+                else
+                    runInContainer.bindMount(bind);
+            }
+
 
         // mount ToolIntallers installation directory so installed tools are available inside container
 
